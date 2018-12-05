@@ -59,6 +59,7 @@ func RandStringBytes(n int) string {
 }
 
 func (p *Request) predict() error {
+	fmt.Printf("Version of TF: %s\n", tf.Version())
 	startProcessing := time.Now()
 
 	fmt.Println("Handling request " + time.Now().String())
