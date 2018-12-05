@@ -1,0 +1,13 @@
+version: '3.1'
+
+services:
+  web:
+    container_name: image-v3
+    build:
+      context: ./
+      dockerfile: dockerfiles/cpu/Dockerfile
+    volumes:
+      - ./meta:/runtime/meta
+    ports:
+      - "3002:3002"
+      
