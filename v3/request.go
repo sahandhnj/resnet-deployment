@@ -1,18 +1,16 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
+	"strconv"
 	"time"
 
 	tf "github.com/tensorflow/tensorflow/tensorflow/go"
@@ -164,29 +162,37 @@ func (p *Request) predict() error {
 
 func normalizeResult(probabilities []float32, labelsFile string) (*Prediction, error) {
 	bestIdx := 0
+	labelsData, err := ioutil.ReadFile(labelsFile)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// file, err := os.Open(labelsFile)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer file.Close()
+	// scanner := bufio.NewScanner(file)
+	// var labels []string
+	// for scanner.Scan() {
+	// 	labels = append(labels, scanner.Text())
+	// }
+	var labels map[string][]string
+	err = json.Unmarshal(labelsData, &labels)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(labels["2"][1])
+
 	for i, p := range probabilities {
 		if p > probabilities[bestIdx] {
 			bestIdx = i
 		}
 	}
 
-	file, err := os.Open(labelsFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	var labels []string
-	for scanner.Scan() {
-		labels = append(labels, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-	name := labels[bestIdx]
-	name = strings.Replace(name, "\"", "", -1)
-	name = strings.TrimSpace(name)
-	fmt.Printf("Most likely to be a %s (%2.0f)\n", name, probabilities[bestIdx]*100.0)
+	name := labels[strconv.Itoa(bestIdx)][1]
+
+	fmt.Printf("Most likely to be a %s (%2.0f) - %d\n", name, probabilities[bestIdx]*100.0, bestIdx)
 
 	return &Prediction{
 		Name:       name,
