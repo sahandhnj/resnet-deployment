@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"time"
 
@@ -21,7 +22,7 @@ type Status string
 const (
 	Queued     = "Queued"
 	Processing = "Processing"
-	Done       = "Done"
+	Done       = "Success"
 	Failed     = "Failed"
 )
 
@@ -35,10 +36,10 @@ type Request struct {
 }
 
 type Resp struct {
-	RequestedAt    time.Time   `json:"requestedAt"`
-	ProcessingTime int64       `json:"processingTime"`
-	Status         Status      `json:"status"`
-	Prediction     *Prediction `json:"prediction"`
+	RequestedAt    time.Time    `json:"requestedAt"`
+	ProcessingTime int64        `json:"processingTime"`
+	Status         Status       `json:"status"`
+	Prediction     []Prediction `json:"prediction"`
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -160,8 +161,7 @@ func (p *Request) predict() error {
 	return nil
 }
 
-func normalizeResult(probabilities []float32, labelsFile string) (*Prediction, error) {
-	bestIdx := 0
+func normalizeResult(probabilities []float32, labelsFile string) ([]Prediction, error) {
 	labelsData, err := ioutil.ReadFile(labelsFile)
 	// if err != nil {
 	// 	return nil, err
@@ -177,25 +177,78 @@ func normalizeResult(probabilities []float32, labelsFile string) (*Prediction, e
 	// for scanner.Scan() {
 	// 	labels = append(labels, scanner.Text())
 	// }
+
 	var labels map[string][]string
 	err = json.Unmarshal(labelsData, &labels)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(labels["2"][1])
+	sort.SliceStable(probabilities, func(i, j int) bool {
+		return int(i) < int(j)
+	})
 
-	for i, p := range probabilities {
-		if p > probabilities[bestIdx] {
-			bestIdx = i
-		}
+	sorted := sortedCollection(probabilities, labels)
+	// for i, p := range sorted {
+	// 	fmt.Printf("%d -> %s : %f\n", i, p.Name, p.Probabiliy)
+	// 	if p > probabilities[bestIdx] {
+	// 		bestIdx = i
+	// 	}
+	// }
+
+	return sorted[:5], nil
+}
+
+func sortedCollection(col []float32, labels map[string][]string) []Prediction {
+	// float32AsFloat64Values := make([]float64, len(col))
+	predictions := make([]Prediction, 0)
+
+	// for i, val := range col {
+	// 	float32AsFloat64Values[i] = float64(val)
+	// }
+	for i, p := range col {
+		predictions = append(predictions, Prediction{
+			Name:       labels[strconv.Itoa(i)][1],
+			Probabiliy: p,
+		})
 	}
 
-	name := labels[strconv.Itoa(bestIdx)][1]
+	sort.SliceStable(predictions, func(i, j int) bool {
+		return predictions[i].Probabiliy > predictions[j].Probabiliy
+	})
 
-	fmt.Printf("Most likely to be a %s (%2.0f) - %d\n", name, probabilities[bestIdx]*100.0, bestIdx)
+	// sort.Float64s(float32AsFloat64Values)
 
-	return &Prediction{
-		Name:       name,
-		Probabiliy: probabilities[bestIdx] * 100.0,
-	}, nil
+	// for i, val := range float32AsFloat64Values {
+	// 	col[i] = float32(val)
+	// }
+
+	return predictions
+}
+
+func bubbleSort(numbers []float32) {
+	var N int = len(numbers)
+	var i int
+	for i = 0; i < N; i++ {
+		sweep(numbers)
+	}
+}
+
+func sweep(numbers []float32) {
+	var N int = len(numbers)
+	var firstIndex int = 0
+	var secondIndex int = 1
+
+	for secondIndex < N {
+		var firstNumber float32 = numbers[firstIndex]
+		var secondNumber float32 = numbers[secondIndex]
+
+		if firstNumber > secondNumber {
+			numbers[firstIndex] = secondNumber
+			numbers[secondIndex] = firstNumber
+		}
+
+		firstIndex++
+		secondIndex++
+	}
 }
