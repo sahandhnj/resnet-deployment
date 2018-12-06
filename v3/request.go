@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"math/rand"
 	"mime/multipart"
 	"net/http"
@@ -46,7 +47,7 @@ const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 type Prediction struct {
 	Name       string  `json:"name"`
-	Probabiliy float32 `json:"probability"`
+	Probabiliy float64 `json:"probability"`
 }
 
 func RandStringBytes(n int) string {
@@ -206,10 +207,14 @@ func sortedCollection(col []float32, labels map[string][]string) []Prediction {
 	// for i, val := range col {
 	// 	float32AsFloat64Values[i] = float64(val)
 	// }
+
 	for i, p := range col {
+		p64 := float64(p)
+		pfrom100 := p64 * 100
+		pRounded := math.Round(pfrom100*100) / 100
 		predictions = append(predictions, Prediction{
 			Name:       labels[strconv.Itoa(i)][1],
-			Probabiliy: p,
+			Probabiliy: pRounded,
 		})
 	}
 
