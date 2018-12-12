@@ -1,3 +1,3 @@
 #!/bin/bash
 
-venv/bin/locust -f locust/locustfile.py --host=http://localhost:3001/api/model/imagedetector/v1
+venv/bin/locust -f locust/locustfile.py --host=http://ml.launchai.io/resnet/v1

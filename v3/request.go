@@ -211,16 +211,20 @@ func sortedCollection(col []float32, labels map[string][]string) []Prediction {
 	for i, p := range col {
 		p64 := float64(p)
 		pfrom100 := p64 * 100
-		pRounded := math.Round(pfrom100*100) / 100
+		// pRounded := math.Round(pfrom100*100) / 100
 		predictions = append(predictions, Prediction{
 			Name:       labels[strconv.Itoa(i)][1],
-			Probabiliy: pRounded,
+			Probabiliy: pfrom100,
 		})
 	}
 
 	sort.SliceStable(predictions, func(i, j int) bool {
 		return predictions[i].Probabiliy > predictions[j].Probabiliy
 	})
+
+	for i, p := range predictions {
+		predictions[i].Probabiliy = math.Round(p.Probabiliy*100) / 100
+	}
 
 	// sort.Float64s(float32AsFloat64Values)
 

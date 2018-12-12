@@ -5,9 +5,9 @@ class UserTasks(TaskSet):
 
     @task
     def predict(self):
-        with open('input.jpg', 'rb') as image:
+        with open('input.jpg', 'rb') as git simage:
             self.client.post(
-                "/predict",
+                "/predict?token=kbaHGfnd0XeQSOk0OL1eFdOkLSHdhp44tGPPZGw0D4rAtlg0cwx1gUQ4oij",
                 data={},
                 files={'file': image}
             )
